@@ -106,6 +106,8 @@ as the "best guess", or estimate, for the population parameter.
 Suppose we were interested in the population mean. What would be natural
 point estimate to use?
 
+You would want to use the mean statistic $\bar{x}$
+
 
 | Quantity           | Parameter  | Statistic   |
 |--------------------|------------|-------------|
@@ -117,6 +119,9 @@ point estimate to use?
 
 
 What is the downside to using point estimates?
+
+They are just that - estimates. They're only estimations of the actual thing,
+and they can be manipulated by things like outliers and bad sampling.
 
 ## Confidence intervals
 
@@ -146,6 +151,8 @@ Suppose you randomly sample 50 students and 5 of them are left handed. If you
 were to take another random sample of 50 students, how many would you expect 
 to be left handed? Would you be surprised if only 3 of them were left handed? 
 Would you be surprised if 40 of them were left handed?
+
+I wouldn't be surprised with 3, but I would be with 40.
 
 ## Quantifying the variability of a sample statistic
 
@@ -189,7 +196,7 @@ Consider 20 1-bedroom apartments that were randomly selected on
 Craigslist Manhattan from apartments listed as "by owner".
 
 ```{r data_manhattan}
-manhattan <- read_csv("~/manhattan.csv")
+manhattan <- read_csv("~/R/lecture-note-class-13-jt-galla/manhattan.csv")
 ```
 
 Consider 3-10 day survival of mice randomized to various
@@ -250,10 +257,10 @@ Create a 95% bootstrap confidence interval for the population *mean* price of
 
 First, identify the following:
 
-- Population: 
-- Parameter of interest:
-- Sample:
-- Sample size:
+- Population: 1-bedroom apartments
+- Parameter of interest: Rent cost
+- Sample: Randomly sampled 1-bedroom apartments in Manhattan
+- Sample size: 20
 
 To create our confidence interval, we'll follow the four-step bootstrap
 scheme outlined in the slides using functions from `infer`.
@@ -330,6 +337,9 @@ get_ci(boot_means, level = 0.95)
 
 What does this mean?
 
+This means that we are 95% confident the true mean (avg) of 1-bedroom Manhattan 
+apartments is between 2299 and 2977.
+
 **Interpretation**:
 
 #### Practice
@@ -339,8 +349,15 @@ population *median* price of 1-bedroom apartments in Manhattan. Do this in a
 single code chunk with a single pipeline. Provide an interpretation of your result.
 
 ```{r practice_1}
-
+boot_medians <- manhattan %>% 
+  specify(response = rent) %>% 
+  generate(reps = 10000, type = "bootstrap") %>% 
+  calculate(stat = "median") %>%
+  get_ci(level = 0.95)
 ```
+
+Interpretation: This means that we are 95% confident the true median (middle) of 
+1-bedroom Manhattan apartments is between 2162.5 and 2875.
 
 ### A confidence interval for the population proportion - $p$
 
@@ -348,10 +365,10 @@ Consider the mice radiation dataset. Suppose we want to compute a 95% confidence
 
 First, identify the following:
 
-- Population: 
-- Parameter of interest:
-- Sample:
-- Sample size:
+- Population: Mice
+- Parameter of interest: Dead or Not Dead after Specific Dose
+- Sample: Mice given Doses
+- Sample size: 522 mice
 
 ```{r boot_mice}
 boot_prop <- mice %>% 
@@ -369,6 +386,9 @@ ci_mice_died
 
 What does this mean?
 
+This means that we are 95% confident the true proportion of mice who died while
+not on the treatment regardless of dose is between 0.690 and 0.797.
+
 **Interpretation**:
 
 ```{r visualize_ci_mice}
@@ -381,22 +401,31 @@ visualise(boot_prop) +
 Consider the mice radiation results. Suppose we want to compute a 90% confidence interval for the proportion of mice that lived while on the treatment, regardless of the dose.
 
 ```{r practice_2_bootstrap}
-
+boot_prop_prx2 <- mice %>% 
+  filter(treat == 1) %>% 
+  mutate(died = if_else(died == 1, "yes", "no")) %>% 
+  specify(response = died, success = "yes") %>% 
+  generate(reps = 10000, type = "bootstrap") %>% 
+  calculate(stat = "prop")
 ```
 
 ```{r practice_2_ci}
-
+ci_mice_died_prx2 <- get_ci(boot_prop_prx2, level = .90)
+ci_mice_died_prx2
 ```
 
 Visualizing our Resuts:
 
 ```{r practice_2_visualize}
-
+visualise(boot_prop_prx2) +
+  shade_ci(ci_mice_died_prx2)
 ```
 
 
 Give an interpretation of your result.
 
+This means that we are 90% confident the true proportion of mice who died while
+on the treatment regardless of dose is between 0.349 and 0.448.
 
 # References
 
